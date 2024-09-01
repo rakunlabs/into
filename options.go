@@ -22,6 +22,10 @@ type option struct {
 	waitFn   func()
 }
 
+func (o *option) SetContextCancelFn(fn func(cancel context.CancelFunc)) {
+	o.ctxCancelFn = fn
+}
+
 type Option func(options *option)
 
 // WithMsg is a function that sets the message to be logged when the application starts and stops.

@@ -28,5 +28,12 @@ func run(ctx context.Context) error {
 		<-time.After(6 * time.Second)
 	}()
 
+	into.SetCtxCancelFn(ctx, func(cancel context.CancelFunc) {
+		slog.Warn("canceled")
+		cancel()
+	})
+
+	time.Sleep(2 * time.Second)
+
 	return nil
 }

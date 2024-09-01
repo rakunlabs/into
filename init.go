@@ -107,7 +107,10 @@ func Init(fn func(context.Context) error, options ...Option) {
 		shutdown.Run(true)
 	}()
 
-	ctx = setWaitGroup(ctx, &wg)
+	ctx = setIntoValue(ctx, &intoType{
+		wg:  &wg,
+		opt: opt,
+	})
 
 	if err := fn(ctx); err != nil {
 		exitCode = opt.errExitCode(err)

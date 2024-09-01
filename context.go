@@ -7,16 +7,33 @@ import (
 
 type ctxKey string
 
-const (
-	ctxKeyWaitGroup ctxKey = "waitGroup"
-)
+const ctxKeyInto ctxKey = "into"
 
-func WaitGroup(ctx context.Context) *sync.WaitGroup {
-	wg, _ := ctx.Value(ctxKeyWaitGroup).(*sync.WaitGroup)
-
-	return wg
+type intoType struct {
+	opt *option
+	wg  *sync.WaitGroup
 }
 
-func setWaitGroup(ctx context.Context, wg *sync.WaitGroup) context.Context {
-	return context.WithValue(ctx, ctxKeyWaitGroup, wg)
+// SetContextWaitGroup sets the into's signal cancel function.
+func SetCtxCancelFn(ctx context.Context, fn func(cancel context.CancelFunc)) {
+	t, _ := ctx.Value(ctxKeyInto).(*intoType)
+
+	if t != nil {
+		t.opt.SetContextCancelFn(fn)
+	}
+}
+
+// WaitGroup returns the into main wait group from the context.
+func WaitGroup(ctx context.Context) *sync.WaitGroup {
+	t, _ := ctx.Value(ctxKeyInto).(*intoType)
+
+	if t != nil {
+		return t.wg
+	}
+
+	return nil
+}
+
+func setIntoValue(ctx context.Context, into *intoType) context.Context {
+	return context.WithValue(ctx, ctxKeyInto, into)
 }
