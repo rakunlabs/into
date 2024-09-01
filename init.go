@@ -22,7 +22,7 @@ var (
 	shutdown shutdownType
 )
 
-func Run(fn func(context.Context) error, options ...Option) {
+func Init(fn func(context.Context) error, options ...Option) {
 	opt := newOption(options...)
 	logger = opt.logger
 	if logger == nil {

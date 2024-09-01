@@ -16,7 +16,7 @@ type option struct {
 	errExitCode   func(error) int
 	ctxCancelFn   func(cancel context.CancelFunc)
 
-	runErrFn func(error) error
+	runErrFn func(error)
 	startFn  func()
 	stopFn   func()
 	waitFn   func()
@@ -73,8 +73,12 @@ func WithCtxCancelFn(fn func(cancel context.CancelFunc)) Option {
 }
 
 // WithRunErrFn function for replace custom error message return from `Run` function.
-func WithRunErrFn(fn func(error) error) Option {
+func WithRunErrFn(fn func(error)) Option {
 	return func(options *option) {
+		if fn == nil {
+			fn = func(_ error) {}
+		}
+
 		options.runErrFn = fn
 	}
 }
@@ -82,6 +86,10 @@ func WithRunErrFn(fn func(error) error) Option {
 // WithStartFn function for replace custom starting log message.
 func WithStartFn(fn func()) Option {
 	return func(options *option) {
+		if fn == nil {
+			fn = func() {}
+		}
+
 		options.startFn = fn
 	}
 }
@@ -89,6 +97,10 @@ func WithStartFn(fn func()) Option {
 // WithStopFn function for replace custom stopping log message.
 func WithStopFn(fn func()) Option {
 	return func(options *option) {
+		if fn == nil {
+			fn = func() {}
+		}
+
 		options.stopFn = fn
 	}
 }
@@ -97,6 +109,10 @@ func WithStopFn(fn func()) Option {
 // This function will be called after timeout of wait group.
 func WithWaitFn(fn func()) Option {
 	return func(options *option) {
+		if fn == nil {
+			fn = func() {}
+		}
+
 		options.waitFn = fn
 	}
 }

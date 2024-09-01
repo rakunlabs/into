@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	into.Run(run,
+	into.Init(run,
 		into.WithLogger(slog.Default()),
 		into.WithMsgf("myservice [%s]", "v0.1.0"),
 		into.WithWaitTimeout(5*time.Second),
