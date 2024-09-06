@@ -8,8 +8,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/rakunlabs/logi/logadapter"
 )
 
 var (
@@ -17,7 +15,7 @@ var (
 	DefaultWgTimeout = 1 * time.Minute
 
 	exitCode = 0
-	logger   logadapter.Adapter
+	logger   LogAdapter
 
 	shutdown shutdownType
 )
@@ -26,7 +24,7 @@ func Init(fn func(context.Context) error, options ...Option) {
 	opt := newOption(options...)
 	logger = opt.logger
 	if logger == nil {
-		logger = logadapter.Noop{}
+		logger = LogNoop{}
 	}
 
 	if opt.errExitCode == nil {

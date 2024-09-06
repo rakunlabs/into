@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/rakunlabs/logi/logadapter"
 )
 
 type option struct {
 	msg           string
 	ctx           context.Context //nolint:containedctx // temporary
-	logger        logadapter.Adapter
+	logger        LogAdapter
 	wgWaitTimeout time.Duration
 	errExitCode   func(error) int
 	ctxCancelFn   func(cancel context.CancelFunc)
@@ -62,7 +60,7 @@ func WithErrExitCode(fn func(err error) int) Option {
 
 // WithLogger is a function that sets the logger to be used.
 // If not set, it is no-op.
-func WithLogger(logger logadapter.Adapter) Option {
+func WithLogger(logger LogAdapter) Option {
 	return func(options *option) {
 		options.logger = logger
 	}
