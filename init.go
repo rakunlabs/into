@@ -2,7 +2,6 @@ package into
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"os/signal"
 	"sync"
@@ -116,7 +115,7 @@ func Init(fn func(context.Context) error, options ...Option) {
 		if opt.runErrFn != nil {
 			opt.runErrFn(err)
 		} else {
-			logger.Error("service closing: "+opt.msg, slog.String("error", err.Error()))
+			logger.Error("service closing: "+opt.msg, "error", err.Error())
 		}
 	}
 }
