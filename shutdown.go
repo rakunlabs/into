@@ -21,6 +21,15 @@ func ShutdownAdd(fn func() error, options ...OptionShutdownAdd) {
 	shutdown.Add(fn, options...)
 }
 
+// FnWarp is a function that wraps a function to be used in the shutdown.
+func FnWarp(fn func()) func() error {
+	return func() error {
+		fn()
+
+		return nil
+	}
+}
+
 func (s *shutdownType) setCtxCancel(ctxCancel context.CancelFunc) {
 	s.ctxCancel = ctxCancel
 }
