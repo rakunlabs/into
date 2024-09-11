@@ -17,14 +17,22 @@ type shutdownInfo struct {
 	fn   func() error
 }
 
-func ShutdownAdd(fn func() error, options ...OptionShutdownAdd) {
-	shutdown.Add(fn, options...)
+// CtxCancel is a function that cancels the root context.
+func CtxCancel() {
+	shutdown.CtxCancel()
+}
+
+// Add is a function that adds a function to the shutdown. This function will be called when the context is done.
+func ShutdownAdd(fn func() error, name string) {
+	shutdown.Add(fn, name)
 }
 
 // FnWarp is a function that wraps a function to be used in the shutdown.
 func FnWarp(fn func()) func() error {
 	return func() error {
-		fn()
+		if fn != nil {
+			fn()
+		}
 
 		return nil
 	}
@@ -45,22 +53,17 @@ func (s *shutdownType) CtxCancel() {
 	s.ctxCancel()
 }
 
-func (s *shutdownType) Add(fn func() error, options ...OptionShutdownAdd) {
-	option := optionShutdownAdd{}
-	for _, opt := range options {
-		opt(&option)
-	}
-
+func (s *shutdownType) Add(fn func() error, name string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.funcs = append(s.funcs, shutdownInfo{
-		name: option.name,
+		name: name,
 		fn:   fn,
 	})
 }
 
-func (s *shutdownType) Run(once bool) {
+func (s *shutdownType) Run() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -68,20 +71,13 @@ func (s *shutdownType) Run(once bool) {
 	for i := len(s.funcs) - 1; i >= 0; i-- {
 		inf := s.funcs[i]
 
+		if inf.fn == nil {
+			logger.Warn("shutdown function is nil", "name", inf.name)
+			continue
+		}
+
 		if err := inf.fn(); err != nil {
 			logger.Error("shutdown error", "name", inf.name, "error", err.Error())
 		}
-	}
-}
-
-type optionShutdownAdd struct {
-	name string
-}
-
-type OptionShutdownAdd func(options *optionShutdownAdd)
-
-func WithShutdownName(name string) OptionShutdownAdd {
-	return func(options *optionShutdownAdd) {
-		options.name = name
 	}
 }

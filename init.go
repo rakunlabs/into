@@ -101,7 +101,7 @@ func Init(fn func(context.Context) error, options ...Option) {
 			}
 		}
 
-		shutdown.Run(true)
+		shutdown.Run()
 	}()
 
 	ctx = setIntoValue(ctx, &intoType{
