@@ -57,6 +57,14 @@ func (s *shutdownType) Add(fn func() error, name string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	for i := range s.funcs {
+		if s.funcs[i].name == name {
+			s.funcs[i].fn = fn
+
+			return
+		}
+	}
+
 	s.funcs = append(s.funcs, shutdownInfo{
 		name: name,
 		fn:   fn,
