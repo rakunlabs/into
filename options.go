@@ -3,6 +3,7 @@ package into
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -123,6 +124,7 @@ func newOption(options ...Option) *option {
 	option := &option{
 		ctx:           context.Background(),
 		wgWaitTimeout: DefaultWgTimeout,
+		logger:        slog.Default(),
 	}
 
 	for _, opt := range options {

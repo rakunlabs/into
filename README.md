@@ -15,7 +15,6 @@ go get github.com/rakunlabs/into
 ```go
 func main() {
 	into.Init(run,
-		into.WithLogger(slog.Default()),
 		into.WithMsgf("myservice [%s]", "v0.1.0"),
 	)
 }
