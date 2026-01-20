@@ -22,7 +22,7 @@ func CtxCancel() {
 	shutdown.CtxCancel()
 }
 
-// Add is a function that adds a function to the shutdown. This function will be called when the context is done.
+// ShutdownAdd is a function that adds a function to the shutdown. This function will be called when the context is done.
 func ShutdownAdd(fn func() error, name string) {
 	shutdown.Add(fn, name)
 }
@@ -42,7 +42,7 @@ func (s *shutdownType) setCtxCancel(ctxCancel context.CancelFunc) {
 	s.ctxCancel = ctxCancel
 }
 
-// Cancel is a function that cancels the root context.
+// CtxCancel is a function that cancels the root context.
 //
 // This helps to stop the application gracefully without any errors.
 func (s *shutdownType) CtxCancel() {

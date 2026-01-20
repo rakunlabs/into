@@ -23,3 +23,27 @@ func run(ctx context.Context) error {
 	return nil
 }
 ```
+
+### Health Check
+
+You can enable health check endpoint by adding `into.WithHealthCheck()` option.
+
+```go
+into.Init(run,
+	into.WithMsgf("myservice [%s]", "v0.1.0"),
+	into.WithHealthCheck(),
+)
+
+
+// The health check endpoint will be available at /healthz
+// Set function to respond to health check requests.
+into.HealthCheck = func(ctx context.Context) error {
+	return errors.New("some problem")
+}
+```
+
+Call health check from your command line:
+
+```sh
+go run main.go --health-check
+```

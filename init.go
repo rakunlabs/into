@@ -21,10 +21,14 @@ var (
 
 func Init(fn func(context.Context) error, options ...Option) {
 	opt := newOption(options...)
+
 	logger = opt.logger
 	if logger == nil {
 		logger = LogNoop{}
 	}
+
+	// args to check commands
+	commands(opt.ctx, opt)
 
 	if opt.errExitCode == nil {
 		opt.errExitCode = func(_ error) int { return 1 }
@@ -109,6 +113,10 @@ func Init(fn func(context.Context) error, options ...Option) {
 		opt: opt,
 	})
 
+	// health check server
+	startHealthCheckServer(ctx, opt.healthCheckOptions)
+
+	// run main function
 	if err := fn(ctx); err != nil {
 		exitCode = opt.errExitCode(err)
 

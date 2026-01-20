@@ -19,6 +19,22 @@ type option struct {
 	startFn  func()
 	stopFn   func()
 	waitFn   func()
+
+	healthCheckOptions *optionsHealthCheck
+}
+
+func newOption(options ...Option) *option {
+	option := &option{
+		ctx:           context.Background(),
+		wgWaitTimeout: DefaultWgTimeout,
+		logger:        slog.Default(),
+	}
+
+	for _, opt := range options {
+		opt(option)
+	}
+
+	return option
 }
 
 func (o *option) SetContextCancelFn(fn func(cancel context.CancelFunc)) {
@@ -27,7 +43,19 @@ func (o *option) SetContextCancelFn(fn func(cancel context.CancelFunc)) {
 
 type Option func(options *option)
 
-// WithMsg is a function that sets the message to be logged when the application starts and stops.
+func WithHealthCheck(opts ...OptionHealthCheck) Option {
+	return func(options *option) {
+		if options.healthCheckOptions == nil {
+			options.healthCheckOptions = &optionsHealthCheck{}
+		}
+
+		for _, opt := range opts {
+			opt(options.healthCheckOptions)
+		}
+	}
+}
+
+// WithMsgf is a function that sets the message to be logged when the application starts and stops.
 //
 // This will override the default message.
 func WithMsgf(format string, a ...any) Option {
@@ -87,6 +115,7 @@ func WithRunErrFn(fn func(error)) Option {
 }
 
 // WithStartFn function for replace custom starting log message.
+//   - Set nil to disable.
 func WithStartFn(fn func()) Option {
 	return func(options *option) {
 		if fn == nil {
@@ -98,6 +127,7 @@ func WithStartFn(fn func()) Option {
 }
 
 // WithStopFn function for replace custom stopping log message.
+//   - Set nil to disable.
 func WithStopFn(fn func()) Option {
 	return func(options *option) {
 		if fn == nil {
@@ -110,6 +140,7 @@ func WithStopFn(fn func()) Option {
 
 // WithWaitFn function for replace custom waiting log message.
 // This function will be called after timeout of wait group.
+//   - Set nil to disable.
 func WithWaitFn(fn func()) Option {
 	return func(options *option) {
 		if fn == nil {
@@ -118,18 +149,4 @@ func WithWaitFn(fn func()) Option {
 
 		options.waitFn = fn
 	}
-}
-
-func newOption(options ...Option) *option {
-	option := &option{
-		ctx:           context.Background(),
-		wgWaitTimeout: DefaultWgTimeout,
-		logger:        slog.Default(),
-	}
-
-	for _, opt := range options {
-		opt(option)
-	}
-
-	return option
 }

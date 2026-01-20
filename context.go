@@ -14,7 +14,7 @@ type intoType struct {
 	wg  *sync.WaitGroup
 }
 
-// SetContextWaitGroup sets the into's signal cancel function.
+// SetCtxCancelFn sets the context cancel function in the into options.
 func SetCtxCancelFn(ctx context.Context, fn func(cancel context.CancelFunc)) {
 	t, _ := ctx.Value(ctxKeyInto).(*intoType)
 
