@@ -32,6 +32,7 @@ You can enable health check endpoint by adding `into.WithHealthCheck()` option.
 into.Init(run,
 	into.WithMsgf("myservice [%s]", "v0.1.0"),
 	into.WithHealthCheck(),
+	into.WithKill(),
 )
 
 
@@ -45,5 +46,5 @@ into.HealthCheck = func(ctx context.Context) error {
 Call health check from your command line:
 
 ```sh
-go run main.go --health-check
+go run main.go --health
 ```

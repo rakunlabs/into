@@ -114,7 +114,7 @@ func Init(fn func(context.Context) error, options ...Option) {
 	})
 
 	// health check server
-	startHealthCheckServer(ctx, opt.healthCheckOptions)
+	serve(ctx, opt.serverOptions)
 
 	// run main function
 	if err := fn(ctx); err != nil {

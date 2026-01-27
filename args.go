@@ -13,7 +13,7 @@ var healthCheckFlag flagStr = "health"
 func parseFlag() flagStr {
 	for _, arg := range os.Args {
 		switch strings.ToLower(arg) {
-		case "-health-check", "--health-check":
+		case "-health", "--health":
 			return healthCheckFlag
 		}
 	}
@@ -24,6 +24,6 @@ func parseFlag() flagStr {
 func commands(ctx context.Context, opt *option) {
 	switch parseFlag() {
 	case healthCheckFlag:
-		callHealthCheck(ctx, opt.healthCheckOptions)
+		callHealthCheck(ctx, opt.serverOptions)
 	}
 }

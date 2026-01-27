@@ -20,7 +20,7 @@ type option struct {
 	stopFn   func()
 	waitFn   func()
 
-	healthCheckOptions *optionsHealthCheck
+	serverOptions *optionServer
 }
 
 func newOption(options ...Option) *option {
@@ -45,12 +45,44 @@ type Option func(options *option)
 
 func WithHealthCheck(opts ...OptionHealthCheck) Option {
 	return func(options *option) {
-		if options.healthCheckOptions == nil {
-			options.healthCheckOptions = &optionsHealthCheck{}
+		if options.serverOptions == nil {
+			options.serverOptions = &optionServer{}
+		}
+
+		if options.serverOptions.healthCheckOption == nil {
+			options.serverOptions.healthCheckOption = &optionHealthCheck{}
 		}
 
 		for _, opt := range opts {
-			opt(options.healthCheckOptions)
+			opt(options.serverOptions.healthCheckOption)
+		}
+	}
+}
+
+func WithKill(opts ...OptionKill) Option {
+	return func(options *option) {
+		if options.serverOptions == nil {
+			options.serverOptions = &optionServer{}
+		}
+
+		if options.serverOptions.killOption == nil {
+			options.serverOptions.killOption = &optionKill{}
+		}
+
+		for _, opt := range opts {
+			opt(options.serverOptions.killOption)
+		}
+	}
+}
+
+func WithServer(opts ...OptionServer) Option {
+	return func(options *option) {
+		if options.serverOptions == nil {
+			options.serverOptions = &optionServer{}
+		}
+
+		for _, opt := range opts {
+			opt(options.serverOptions)
 		}
 	}
 }
