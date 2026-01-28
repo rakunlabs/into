@@ -37,6 +37,25 @@ var KillHeaderCheck = func(h http.Header) bool {
 	return true
 }
 
+// KillHeaderCheckMap is a map of header keys and expected values for kill request authorization.
+//   - If any of the headers match, the request is authorized.
+//   - If the map is empty, all requests are authorized.
+func KillHeaderCheckMap(headerMap map[string]string) {
+	KillHeaderCheck = func(h http.Header) bool {
+		if len(headerMap) == 0 {
+			return true
+		}
+
+		for key, expectedValue := range headerMap {
+			if h.Get(key) == expectedValue {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
 func killHandler(mux *http.ServeMux, opt *optionServer) {
 	if opt.killOption == nil {
 		return

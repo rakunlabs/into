@@ -68,6 +68,11 @@ into.KillHeaderCheck = func(h http.Header) bool {
 	// check for custom header
 	return h.Get("X-Kill-Secret") == "mysecret"
 }
+
+// Or use predefined map check
+into.KillHeaderCheckMap(map[string]string{
+	"X-Kill-Secret": "mysecret",
+})
 ```
 
 Example CURL request to call kill endpoint:

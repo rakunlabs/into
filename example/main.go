@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"net/http"
 
 	"github.com/rakunlabs/into"
 )
@@ -23,9 +22,12 @@ func run(ctx context.Context) error {
 		return errors.New("some problem")
 	}
 
-	into.KillHeaderCheck = func(h http.Header) bool {
-		return h.Get("X-Kill-Secret") == "mysecret"
-	}
+	// into.KillHeaderCheck = func(h http.Header) bool {
+	// 	return h.Get("X-Kill-Secret") == "mysecret"
+	// }
+	into.KillHeaderCheckMap(map[string]string{
+		"X-Kill-Secret": "mysecret",
+	})
 
 	<-ctx.Done()
 
