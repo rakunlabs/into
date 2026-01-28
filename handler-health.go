@@ -23,22 +23,22 @@ var HealthCheck = func(ctx context.Context) error {
 }
 
 type optionHealthCheck struct {
-	Path    *string
-	Timeout *time.Duration
+	Path    string
+	Timeout time.Duration
 }
 
 func getHealthCheckOptions(opt *optionHealthCheck) optionHealthCheck {
 	optHealthCheck := optionHealthCheck{
-		Path:    &DefaultHealthCheckPath,
-		Timeout: &DefaultHealthCheckTimeout,
+		Path:    DefaultHealthCheckPath,
+		Timeout: DefaultHealthCheckTimeout,
 	}
 
 	if opt != nil {
-		if opt.Path != nil {
+		if opt.Path != "" {
 			optHealthCheck.Path = opt.Path
 		}
 
-		if opt.Timeout != nil {
+		if opt.Timeout != 0 {
 			optHealthCheck.Timeout = opt.Timeout
 		}
 	}
@@ -53,7 +53,7 @@ type OptionHealthCheck func(options *optionHealthCheck)
 //     DefaultHealthCheckPath
 func WithHealthCheckPath(path string) OptionHealthCheck {
 	return func(options *optionHealthCheck) {
-		options.Path = &path
+		options.Path = path
 	}
 }
 
@@ -62,7 +62,7 @@ func WithHealthCheckPath(path string) OptionHealthCheck {
 //     DefaultHealthCheckTimeout
 func WithHealthCheckTimeout(timeout time.Duration) OptionHealthCheck {
 	return func(options *optionHealthCheck) {
-		options.Timeout = &timeout
+		options.Timeout = timeout
 	}
 }
 
@@ -76,8 +76,8 @@ func healthCheckHandler(mux *http.ServeMux, opt *optionServer) {
 
 	optHealthCheck := getHealthCheckOptions(opt.healthCheckOption)
 
-	logger.Info("init health check endpoint registered", "path", *optHealthCheck.Path)
-	mux.HandleFunc(*optHealthCheck.Path, func(w http.ResponseWriter, r *http.Request) {
+	logger.Info("init health check endpoint registered", "path", optHealthCheck.Path)
+	mux.HandleFunc(optHealthCheck.Path, func(w http.ResponseWriter, r *http.Request) {
 		if HealthCheck != nil {
 			if err := HealthCheck(r.Context()); err != nil {
 				http.Error(w, "Unhealthy: "+err.Error(), http.StatusServiceUnavailable)
@@ -123,7 +123,7 @@ func callHealthCheck(ctx context.Context, opt *optionServer) {
 func callHealthCheckHandler(ctx context.Context, opt *optionServer) (*HealthResponse, error) {
 	optHealthCheck := getHealthCheckOptions(opt.healthCheckOption)
 
-	healthCheckURL := "http://" + strings.Trim(*opt.serverAddress, "/") + "/" + strings.Trim(*optHealthCheck.Path, "/")
+	healthCheckURL := "http://" + strings.Trim(opt.serverAddress, "/") + "/" + strings.Trim(optHealthCheck.Path, "/")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthCheckURL, nil)
 	if err != nil {
@@ -131,7 +131,7 @@ func callHealthCheckHandler(ctx context.Context, opt *optionServer) (*HealthResp
 	}
 
 	client := &http.Client{
-		Timeout: *optHealthCheck.Timeout,
+		Timeout: optHealthCheck.Timeout,
 	}
 
 	resp, err := client.Do(req)

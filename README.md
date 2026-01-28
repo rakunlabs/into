@@ -48,3 +48,30 @@ Call health check from your command line:
 ```sh
 go run main.go --health
 ```
+
+### Kill Endpoint
+
+You can enable kill endpoint by adding `into.WithKill()` option.
+
+```go
+into.Init(run,
+	into.WithMsgf("myservice [%s]", "v0.1.0"),
+	into.WithHealthCheck(),
+	into.WithKill(),
+)
+```
+
+Add extra header check for kill endpoint:
+
+```go
+into.KillHeaderCheck = func(h http.Header) bool {
+	// check for custom header
+	return h.Get("X-Kill-Secret") == "mysecret"
+}
+```
+
+Example CURL request to call kill endpoint:
+
+```sh
+curl -X POST -H "X-Kill-Secret: mysecret" http://localhost:18080/kill
+```

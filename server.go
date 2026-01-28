@@ -9,7 +9,7 @@ import (
 
 var (
 	// DefaultServerAddress is the default address for the health check server.
-	DefaultServerAddress = "127.0.0.1:18080"
+	DefaultServerAddress = "0.0.0.0:18080"
 	// DefaultRequestShutdownTimeout is the default timeout for health check server shutdown.
 	DefaultRequestShutdownTimeout = 5 * time.Second
 )
@@ -18,17 +18,17 @@ type optionServer struct {
 	healthCheckOption *optionHealthCheck
 	killOption        *optionKill
 
-	serverAddress *string
+	serverAddress string
 }
 
 type OptionServer func(options *optionServer)
 
 // WithServerAddress sets the address for server.
-//   - addr: The address to listen on (e.g., "127.0.0.1:18080").
+//   - addr: The address to listen on (e.g., "0.0.0.0:18080").
 //     DefaultServerAddress
 func WithServerAddress(addr string) OptionServer {
 	return func(options *optionServer) {
-		options.serverAddress = &addr
+		options.serverAddress = addr
 	}
 }
 
@@ -37,8 +37,8 @@ func serve(ctx context.Context, opt *optionServer) {
 		return
 	}
 
-	if opt.serverAddress == nil {
-		opt.serverAddress = &DefaultServerAddress
+	if opt.serverAddress == "" {
+		opt.serverAddress = DefaultServerAddress
 	}
 
 	mux := http.NewServeMux()
@@ -48,7 +48,7 @@ func serve(ctx context.Context, opt *optionServer) {
 	killHandler(mux, opt)
 
 	server := &http.Server{
-		Addr:    *opt.serverAddress,
+		Addr:    opt.serverAddress,
 		Handler: mux,
 	}
 
@@ -64,7 +64,7 @@ func serve(ctx context.Context, opt *optionServer) {
 
 	// Start the server in a separate goroutine.
 	go func() {
-		logger.Info("init server starting", "addr", *opt.serverAddress)
+		logger.Info("init server starting", "addr", opt.serverAddress)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("init server error: " + err.Error())
 		}

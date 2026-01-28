@@ -2,24 +2,58 @@ package into
 
 import "net/http"
 
-var (
-	// DefaultKillPath is the path for the kill endpoint.
-	DefaultKillPath = "/kill"
-)
+// DefaultKillPath is the path for the kill endpoint.
+var DefaultKillPath = "/kill"
 
-type optionKill struct{}
+type optionKill struct {
+	Path string
+}
 
 type OptionKill func(options *optionKill)
+
+func WithKillPath(path string) OptionKill {
+	return func(options *optionKill) {
+		options.Path = path
+	}
+}
+
+func getKillOptions(opt *optionKill) optionKill {
+	optKill := optionKill{
+		Path: DefaultKillPath,
+	}
+
+	if opt != nil {
+		if opt.Path != "" {
+			optKill.Path = opt.Path
+		}
+	}
+
+	return optKill
+}
+
+// KillHeaderCheck is a function that checks the headers of a kill request.
+//   - It should return true if the request is authorized, or false otherwise.
+var KillHeaderCheck = func(h http.Header) bool {
+	return true
+}
 
 func killHandler(mux *http.ServeMux, opt *optionServer) {
 	if opt.killOption == nil {
 		return
 	}
 
-	logger.Info("init kill endpoint registered", "path", DefaultKillPath)
-	mux.HandleFunc(DefaultKillPath, func(w http.ResponseWriter, r *http.Request) {
+	killOpt := getKillOptions(opt.killOption)
+
+	logger.Info("init kill endpoint registered", "path", killOpt.Path)
+	mux.HandleFunc(killOpt.Path, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+
+			return
+		}
+
+		if KillHeaderCheck != nil && !KillHeaderCheck(r.Header) {
+			http.Error(w, "Forbidden kill request", http.StatusForbidden)
 
 			return
 		}
@@ -27,6 +61,7 @@ func killHandler(mux *http.ServeMux, opt *optionServer) {
 		w.WriteHeader(http.StatusAccepted)
 		w.Write([]byte("Shutting down.."))
 
+		logger.Info("init kill endpoint triggered, shutting down service")
 		CtxCancel()
 	})
 }
