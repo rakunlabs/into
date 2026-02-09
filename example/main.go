@@ -12,7 +12,7 @@ func main() {
 	into.Init(run,
 		into.WithLogger(slog.Default()),
 		into.WithMsgf("myservice [%s]", "v0.1.0"),
-		into.WithHealthCheck(),
+		into.WithHealthCheck(into.WithHealthCheckCustom()),
 		into.WithKill(),
 	)
 }

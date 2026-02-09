@@ -32,7 +32,6 @@ You can enable health check endpoint by adding `into.WithHealthCheck()` option.
 into.Init(run,
 	into.WithMsgf("myservice [%s]", "v0.1.0"),
 	into.WithHealthCheck(),
-	into.WithKill(),
 )
 
 
@@ -47,6 +46,22 @@ Call health check from your command line:
 
 ```sh
 go run main.go --health
+```
+
+To use custom health check endpoint, you can use `into.WithHealthCheckCustom()` option.  
+This will not start the health check server, but you can call the health check function directly from your code.
+
+```go
+into.Init(run,
+	into.WithMsgf("myservice [%s]", "v0.1.0"),
+	into.WithHealthCheck(into.WithHealthCheckCustom()),
+)
+```
+
+call custom health check endpoint:
+
+```sh
+go run main.go --health-check http://localhost:18080/healthz
 ```
 
 ### Kill Endpoint

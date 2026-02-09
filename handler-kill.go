@@ -56,9 +56,9 @@ func KillHeaderCheckMap(headerMap map[string]string) {
 	}
 }
 
-func killHandler(mux *http.ServeMux, opt *optionServer) {
+func killHandler(mux *http.ServeMux, opt *optionServer) bool {
 	if opt.killOption == nil {
-		return
+		return false
 	}
 
 	killOpt := getKillOptions(opt.killOption)
@@ -83,4 +83,6 @@ func killHandler(mux *http.ServeMux, opt *optionServer) {
 		logger.Info("init kill endpoint triggered, shutting down service")
 		CtxCancel()
 	})
+
+	return true
 }

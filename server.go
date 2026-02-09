@@ -42,10 +42,21 @@ func serve(ctx context.Context, opt *optionServer) {
 	}
 
 	mux := http.NewServeMux()
+
+	handlerAdded := false
+
 	// register health check handler
-	healthCheckHandler(mux, opt)
+	if healthCheckHandler(mux, opt) {
+		handlerAdded = true
+	}
 	// register kill handler
-	killHandler(mux, opt)
+	if killHandler(mux, opt) {
+		handlerAdded = true
+	}
+
+	if !handlerAdded {
+		return
+	}
 
 	server := &http.Server{
 		Addr:    opt.serverAddress,
