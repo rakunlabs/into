@@ -39,6 +39,9 @@ func FnWarp(fn func()) func() error {
 }
 
 func (s *shutdownType) setCtxCancel(ctxCancel context.CancelFunc) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	s.ctxCancel = ctxCancel
 }
 
@@ -46,11 +49,17 @@ func (s *shutdownType) setCtxCancel(ctxCancel context.CancelFunc) {
 //
 // This helps to stop the application gracefully without any errors.
 func (s *shutdownType) CtxCancel() {
-	if s.ctxCancel == nil {
+	s.mutex.Lock()
+	ctxCancel := s.ctxCancel
+	s.mutex.Unlock()
+
+	if ctxCancel == nil {
 		return
 	}
 
-	s.ctxCancel()
+	// Called outside the lock: cancelling wakes the signal goroutine, which
+	// runs Run and would deadlock on a held mutex.
+	ctxCancel()
 }
 
 func (s *shutdownType) Add(fn func() error, name string) {
@@ -72,12 +81,16 @@ func (s *shutdownType) Add(fn func() error, name string) {
 }
 
 func (s *shutdownType) Run() {
+	// Snapshot under the lock and release it before calling out: the mutex is
+	// not reentrant, so a shutdown function calling ShutdownAdd would deadlock.
 	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	funcs := make([]shutdownInfo, len(s.funcs))
+	copy(funcs, s.funcs)
+	s.mutex.Unlock()
 
 	// run opposite order
-	for i := len(s.funcs) - 1; i >= 0; i-- {
-		inf := s.funcs[i]
+	for i := len(funcs) - 1; i >= 0; i-- {
+		inf := funcs[i]
 
 		if inf.fn == nil {
 			logger.Warn("shutdown function is nil", "name", inf.name)

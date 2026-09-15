@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 )
 
@@ -13,7 +14,10 @@ type option struct {
 	logger        LogAdapter
 	wgWaitTimeout time.Duration
 	errExitCode   func(error) int
-	ctxCancelFn   func(cancel context.CancelFunc)
+	// signalExitCode is nil until Init defaults it to the package-level
+	// signalExitCode (128+signum).
+	signalExitCode func(os.Signal) int32
+	ctxCancelFn    func(cancel context.CancelFunc)
 
 	runErrFn func(error)
 	startFn  func()
@@ -50,7 +54,9 @@ func WithHealthCheck(opts ...OptionHealthCheck) Option {
 		}
 
 		if options.serverOptions.healthCheckOption == nil {
-			options.serverOptions.healthCheckOption = &optionHealthCheck{}
+			// Enabled by default: the sub-options below can still turn the
+			// endpoint off, e.g. WithHealthCheckCustom.
+			options.serverOptions.healthCheckOption = &optionHealthCheck{EndpointEnabled: true}
 		}
 
 		for _, opt := range opts {
@@ -116,6 +122,23 @@ func WithWaitTimeout(duration time.Duration) Option {
 func WithErrExitCode(fn func(err error) int) Option {
 	return func(options *option) {
 		options.errExitCode = fn
+	}
+}
+
+// WithSignalExitCode sets the exit code used when a caught signal initiates
+// the shutdown and that shutdown completes without error.
+//
+// The default is the conventional 128+signum (130 for SIGINT, 143 for SIGTERM).
+// Pass `func(os.Signal) int32 { return 1 }` to restore the pre-v0.6.0 behaviour
+// of reporting a generic failure. A run error or a shutdown timeout always
+// outranks this code.
+func WithSignalExitCode(fn func(sig os.Signal) int32) Option {
+	return func(options *option) {
+		if fn == nil {
+			return
+		}
+
+		options.signalExitCode = fn
 	}
 }
 

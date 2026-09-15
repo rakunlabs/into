@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -16,9 +17,35 @@ var (
 	DefaultHealthCheckTimeout = 5 * time.Second
 )
 
-// HealthCheck is a function that performs a health check.
-//   - It should return nil if the application is healthy, or an error otherwise.
-var HealthCheck = func(ctx context.Context) error {
+// healthCheck holds the registered health check. The HTTP handler reads it from
+// the server goroutine while the run function may register it concurrently, so
+// it is stored atomically.
+var healthCheck atomic.Pointer[func(ctx context.Context) error]
+
+// SetHealthCheck registers the check behind the health check endpoint and the
+// --health command. Return nil when the application is healthy, an error
+// otherwise.
+//
+// It is safe to call at any point, including from the run function while the
+// endpoint is already serving. Passing nil restores the default, which always
+// reports healthy.
+func SetHealthCheck(fn func(ctx context.Context) error) {
+	if fn == nil {
+		healthCheck.Store(nil)
+
+		return
+	}
+
+	healthCheck.Store(&fn)
+}
+
+// runHealthCheck reports the health of the application. Without a registered
+// check it always succeeds.
+func runHealthCheck(ctx context.Context) error {
+	if fn := healthCheck.Load(); fn != nil {
+		return (*fn)(ctx)
+	}
+
 	return nil
 }
 
@@ -88,15 +115,14 @@ func healthCheckHandler(mux *http.ServeMux, opt *optionServer) bool {
 
 	logger.Info("init health check endpoint registered", "path", optHealthCheck.Path)
 	mux.HandleFunc(optHealthCheck.Path, func(w http.ResponseWriter, r *http.Request) {
-		if HealthCheck != nil {
-			if err := HealthCheck(r.Context()); err != nil {
-				http.Error(w, "Unhealthy: "+err.Error(), http.StatusServiceUnavailable)
-				return
-			}
+		if err := runHealthCheck(r.Context()); err != nil {
+			http.Error(w, "Unhealthy: "+err.Error(), http.StatusServiceUnavailable)
+
+			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	})
 
 	return true
@@ -115,7 +141,10 @@ func callHealthCheck(ctx context.Context, opt *optionServer) {
 	}
 
 	optHealthCheck := getHealthCheckOptions(opt.healthCheckOption)
-	healthCheckURL := "http://" + strings.Trim(opt.serverAddress, "/") + "/" + strings.Trim(optHealthCheck.Path, "/")
+	// The server is not running yet in this process, so dial the address it will
+	// bind, with a wildcard host rewritten to loopback.
+	address := localDialAddress(resolveServerAddress(opt))
+	healthCheckURL := "http://" + strings.Trim(address, "/") + "/" + strings.Trim(optHealthCheck.Path, "/")
 
 	callHealthCheckWithURL(ctx, healthCheckURL, optHealthCheck.Timeout)
 }

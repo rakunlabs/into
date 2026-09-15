@@ -14,57 +14,35 @@ func newTimeout(duration time.Duration, waitFn func()) *timeout {
 	return &timeout{Duration: duration, WaitFn: waitFn}
 }
 
+// wait blocks until wg is done or Duration elapses, and reports whether the
+// timeout was reached.
+//
+// The watcher goroutine below outlives wait when the wait group never completes.
+// That is inherent: a WaitGroup cannot be abandoned. Nothing else is left
+// running, and the result is returned without sharing mutable state between
+// goroutines.
 func (t *timeout) wait(wg *sync.WaitGroup) bool {
-	timerWait := time.NewTimer(t.Duration)
-	defer timerWait.Stop()
-
-	wgTimeout := &sync.WaitGroup{}
-	wgTimeout.Add(2)
-
-	mutex := &sync.Mutex{}
-	canceled := false
-
-	timeoutReached := false
+	done := make(chan struct{})
 
 	go func() {
-		defer func() {
-			mutex.Lock()
-			defer mutex.Unlock()
-
-			if t.WaitFn != nil {
-				t.WaitFn()
-			} else {
-				logger.Warn("timeout reached while waiting WaitGroup")
-			}
-
-			timeoutReached = true
-
-			if !canceled {
-				wgTimeout.Add(-2)
-			}
-
-			canceled = true
-		}()
-
-		<-timerWait.C
-	}()
-
-	go func() {
-		defer func() {
-			mutex.Lock()
-			defer mutex.Unlock()
-
-			if !canceled {
-				wgTimeout.Add(-2)
-			}
-
-			canceled = true
-		}()
+		defer close(done)
 
 		wg.Wait()
 	}()
 
-	wgTimeout.Wait()
+	timer := time.NewTimer(t.Duration)
+	defer timer.Stop()
 
-	return timeoutReached
+	select {
+	case <-done:
+		return false
+	case <-timer.C:
+		if t.WaitFn != nil {
+			t.WaitFn()
+		} else {
+			logger.Warn("timeout reached while waiting WaitGroup")
+		}
+
+		return true
+	}
 }

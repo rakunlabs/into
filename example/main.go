@@ -18,13 +18,15 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	into.HealthCheck = func(ctx context.Context) error {
+	into.SetHealthCheck(func(ctx context.Context) error {
 		return errors.New("some problem")
-	}
+	})
 
-	// into.KillHeaderCheck = func(h http.Header) bool {
+	// into.SetKillHeaderCheck(func(h http.Header) bool {
 	// 	return h.Get("X-Kill-Secret") == "mysecret"
-	// }
+	// })
+	//
+	// Without one of these the kill endpoint denies every request.
 	into.KillHeaderCheckMap(map[string]string{
 		"X-Kill-Secret": "mysecret",
 	})
